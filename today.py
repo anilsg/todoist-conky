@@ -62,12 +62,12 @@ try: # Always try the server first to get an up to date list.
             print(''.join((prefix, color, task['content'], project))) # Deliver single line to Conky for display.
         else: # Otherwise split into at most two lines. Unfortunately TextWrapper only has option to truncate.
             wrapper.width = linelength # Set to standard width and break into lines.
-            lines = wrapper.wrap(task['content']) # Will now need to take first and last lines.
-            lines = ' ... '.join((lines[0], lines[-1])) # And join together with ... to show missing content.
-            wrapper.width = int(len(lines) / 2) + 4 # Make the lines equal length.
-            lines = wrapper.wrap(lines) # And wrap again to two lines.
-            print(''.join((prefix, color, lines[0], project)))
-            print(''.join((prefix, color, lines[1], ' ' * len(project))))
+            line1 = wrapper.wrap(task['content'])[0] # The 1st line is just wherever the length wraps.
+            line2 = wrapper.wrap(task['content'][::-1])[0][::-1] # The 2nd line is the reversed first wrapped reversed.
+            wrapper.width = int((len(line1) + len(line2)) / 2) + 5 # Make the lines equal length, with room for '...'.
+            line1, line2 = wrapper.wrap(' ... '.join((line1, line2))) # Join and wrap to position '...'.
+            print(''.join((prefix, color, line1, project))) # Display 1st line with project name.
+            print(''.join((prefix, color, line2, ' ' * len(project)))) # 2nd line with blank indent instead of project name.
 
 except Exception as e: # On error report.
     # TODO: Store task list in cache file and report old information from cache when server not available.
