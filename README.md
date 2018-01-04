@@ -40,3 +40,11 @@ This repo just supplies the files required for placement in ``~/.config/conky``.
 - When off-line, tasks will be listed greyed out to indicate non-live status.
 - When task content is too long lines are truncated and wrapped into at most 2 lines.
 
+## Bugs
+
+- Long line content can sometimes be repeated under the line wrap algorithm.
+
+## Screenshot
+
+[!Todoist Conky screenshot](/todoist-conky-screenshot.png?raw=true)
+
