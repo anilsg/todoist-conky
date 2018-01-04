@@ -46,5 +46,5 @@ This repo just supplies the files required for placement in ``~/.config/conky``.
 
 ## Screenshot
 
-[!Todoist Conky screenshot](/todoist-conky-screenshot.png?raw=true)
+![Todoist Conky screenshot](/todoist-conky-screenshot.png?raw=true)
 
