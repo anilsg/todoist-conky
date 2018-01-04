@@ -38,5 +38,5 @@ This repo just supplies the files required for placement in ``~/.config/conky``.
 - Projects list is cached. To refresh the projects list delete the cache file.
 - Off-line access is planned retrieving from most recent cache.
 - When off-line, tasks will be listed greyed out to indicate non-live status.
-- When task content is too long lines will be truncated and potentially wrapped (not yet implemented).
+- When task content is too long lines are truncated and wrapped into at most 2 lines.
 
