@@ -34,7 +34,7 @@ This repo just supplies the files required for placement in ``~/.config/conky``.
 - Tasks are presented with a (possibly truncated) description (content) and project name.
 - Tasks are displayed in colours according to priority.
 - Tasks are sorted by priority and secondarily sorted by project name.
-- Errors are also reported if they occur and are significant as well as the tasks.
+- Significant errors are reported, combined with the task list if possible.
 - Projects list is cached. To refresh the projects list delete the cache file.
 - Off-line access is planned retrieving from most recent cache.
 - When off-line, tasks will be listed greyed out to indicate non-live status.
