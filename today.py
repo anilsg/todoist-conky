@@ -12,6 +12,7 @@ projects_url = 'https://beta.todoist.com/API/v8/projects' # URL to retrieve proj
 tasks_url = 'https://beta.todoist.com/API/v8/tasks' # URL to get task list, cached every minute.
 prefix = '${goto 800}${font Noto Sans Mono:size=12}${alignr}' # Conky prefix required every line to ensure reliable alignment etc.
 prefix4 = '${goto 800}${font Noto Sans Mono:size=12}${alignr}${color4}' # Conky prefix including error colour.
+prefix18 = '${goto 800}${font Noto Sans Mono:size=18}${alignr}${color0}' # Conky prefix including error colour.
 linelength = 50
 
 try: # File may currently hold 40 character token only.
@@ -55,20 +56,23 @@ try: # Always try the server first to get an up to date list.
     dat.sort(key=lambda t: projects.get(t['project_id'], '')) # Secondary sort on project name.
     dat.sort(key=lambda t: t['priority'], reverse=True) # Stable sort primary key is priority.
     wrapper = textwrap.TextWrapper(expand_tabs=False, placeholder='') # Reusable instance is more efficient.
-    for task in dat:
-        color = str(task['priority']).join(('${color', '}')) # Conky colour directive using priority number e.g. ${color4}.
-        project = ' [{0}]'.format(projects.get(task['project_id'], 'unknown')) # ' [Project Name]'.
-        if len(task['content']) <= linelength: # Check if content fits into space allowed on one line.
-            print(''.join((prefix, color, task['content'], project))) # Deliver single line to Conky for display.
-        else: # Otherwise split into at most two lines. Unfortunately TextWrapper only has option to truncate.
-            wrapper.width = linelength # Set to standard width and break into lines.
-            line1 = wrapper.wrap(task['content'])[0] # The 1st line is just wherever the length wraps.
-            line2 = wrapper.wrap(task['content'][::-1])[0][::-1] # The 2nd line is the reversed first wrapped reversed.
-            wrapper.width = int((len(line1) + len(line2)) / 2) + 5 # Make the lines equal length, with room for '...'.
-            line1, line2 = wrapper.wrap(' ... '.join((line1, line2))) # Join and wrap to position '...'.
-            print(''.join((prefix, color, line1, project))) # Display 1st line with project name.
-            print(''.join((prefix, color, line2, ' ' * len(project)))) # 2nd line with blank indent instead of project name.
-
+    if not dat:
+        color = '${color0}' # Intended to be a greyed out / low contrast colour.
+        print(''.join(('${voffset -60}', prefix18, 'NO TASKS'))) # Deliver single line to Conky for display.
+    else:
+        for task in dat:
+            color = str(task['priority']).join(('${color', '}')) # Conky colour directive using priority number e.g. ${color4}.
+            project = ' [{0}]'.format(projects.get(task['project_id'], 'unknown')) # ' [Project Name]'.
+            if len(task['content']) <= linelength: # Check if content fits into space allowed on one line.
+                print(''.join((prefix, color, task['content'], project))) # Deliver single line to Conky for display.
+            else: # Otherwise split into at most two lines. Unfortunately TextWrapper only has option to truncate.
+                wrapper.width = linelength # Set to standard width and break into lines.
+                line1 = wrapper.wrap(task['content'])[0] # The 1st line is just wherever the length wraps.
+                line2 = wrapper.wrap(task['content'][::-1])[0][::-1] # The 2nd line is the reversed first wrapped reversed.
+                wrapper.width = int((len(line1) + len(line2)) / 2) + 5 # Make the lines equal length, with room for '...'.
+                line1, line2 = wrapper.wrap(' ... '.join((line1, line2))) # Join and wrap to position '...'.
+                print(''.join((prefix, color, line1, project))) # Display 1st line with project name.
+                print(''.join((prefix, color, line2, ' ' * len(project)))) # 2nd line with blank indent instead of project name.
 except Exception as e: # On error report.
     # TODO: Store task list in cache file and report old information from cache when server not available.
     # TODO: When reporting task list from cache display as color0 to indicate off-line.
