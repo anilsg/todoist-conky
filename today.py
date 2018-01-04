@@ -1,19 +1,21 @@
 #!/bin/env python
 
-import os.path as path
 import urllib.request as request
 import urllib.parse as parse
 import urllib.error as error # Seems that urllib.error.HTTPError is not following documentation.
 import json
+import textwrap
+from os.path import expanduser
 
 token = '' # Todoist personal API token for authentication will be fetched from ~/.config/todoist.conf.
 projects_url = 'https://beta.todoist.com/API/v8/projects' # URL to retrieve project names, cached daily.
 tasks_url = 'https://beta.todoist.com/API/v8/tasks' # URL to get task list, cached every minute.
 prefix = '${goto 800}${font Noto Sans Mono:size=12}${alignr}' # Conky prefix required every line to ensure reliable alignment etc.
 prefix4 = '${goto 800}${font Noto Sans Mono:size=12}${alignr}${color4}' # Conky prefix including error colour.
+linelength = 50
 
 try: # File may currently hold 40 character token only.
-    with open(path.expanduser('~/.config/todoist.conf'), 'r') as cache: token = cache.read()
+    with open(expanduser('~/.config/todoist.conf'), 'r') as cache: token = cache.read()
 except Exception as e:
     print('{0}{1}: {2} [AUTH]'.format(prefix4, e.args[-1], e.args[0]))
     print('{0}{1}: {2} [AUTH]'.format(prefix4, 'No Todoist auth token in ~/.config/todoist.conf', 'FATAL'))
@@ -22,7 +24,7 @@ except Exception as e:
 # Retrieve projects JSON from cache or server.
 projects = '[]' # Default JSON projects list in case of failure (empty list).
 try: # Try to read the project list from cache first to save a network request.
-    with open(path.expanduser('~/config/conky/today.projects.json'), 'r') as cache:
+    with open(expanduser('~/config/conky/today.projects.json'), 'r') as cache:
         projects = cache.read() # Using cache if found.
 except:
     try: # If cache not available retrieve project list and then cache it.
@@ -30,7 +32,7 @@ except:
         with request.urlopen('?'.join((projects_url, dat))) as res:
             if res.status != 200: raise OSError(res.status, res.msg) # OSError more reliable than urllib.error.HTTPError().
             projects = res.read().decode() # New JSON projects list available from server.
-            with open(path.expanduser('~/.config/conky/today.projects.json'), 'w') as cache:
+            with open(expanduser('~/.config/conky/today.projects.json'), 'w') as cache:
                 cache.write(projects) # Save projects list in cache file.
                 # TODO: Use __file__ or sys.argv[0] to locate and write cache next to script.
                 # TODO: Cache this daily instead of once only by including date in cache filename.
@@ -52,11 +54,20 @@ try: # Always try the server first to get an up to date list.
         dat = json.loads(res.read().decode()) # Convert json task list to python list of dicts.
     dat.sort(key=lambda t: projects.get(t['project_id'], '')) # Secondary sort on project name.
     dat.sort(key=lambda t: t['priority'], reverse=True) # Stable sort primary key is priority.
+    wrapper = textwrap.TextWrapper(expand_tabs=False, placeholder='') # Reusable instance is more efficient.
     for task in dat:
         color = str(task['priority']).join(('${color', '}')) # Conky colour directive using priority number e.g. ${color4}.
-        project = projects.get(task['project_id'], 'unknown') # Project name if available.
-        print('{0}{1}{2} [{3}]'.format(prefix, color, task['content'], project)) # Deliver finished line to Conky for display.
-        # TODO: Truncate display lines to 50 chars or so, wrap onto at most 2 lines, indicate missing content with ...
+        project = ' [{0}]'.format(projects.get(task['project_id'], 'unknown')) # ' [Project Name]'.
+        if len(task['content']) <= linelength: # Check if content fits into space allowed on one line.
+            print(''.join((prefix, color, task['content'], project))) # Deliver single line to Conky for display.
+        else: # Otherwise split into at most two lines. Unfortunately TextWrapper only has option to truncate.
+            wrapper.width = linelength # Set to standard width and break into lines.
+            lines = wrapper.wrap(task['content']) # Will now need to take first and last lines.
+            lines = ' ... '.join((lines[0], lines[-1])) # And join together with ... to show missing content.
+            wrapper.width = int(len(lines) / 2) + 4 # Make the lines equal length.
+            lines = wrapper.wrap(lines) # And wrap again to two lines.
+            print(''.join((prefix, color, lines[0], project)))
+            print(''.join((prefix, color, lines[1], ' ' * len(project))))
 
 except Exception as e: # On error report.
     # TODO: Store task list in cache file and report old information from cache when server not available.
