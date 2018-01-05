@@ -1,5 +1,23 @@
 #!/bin/env python
 
+# ~/.config/conky/today.py
+# Conky script to return Todoist tasks in the 'today' filter as display lines.
+# Runs in ~/.config/conky/.
+# Requires Todoist auth token in ~/.config/todoist.conf.
+# Requires associated ~/.config/conky/conky.conf to call this script.
+# This line will work but recommend refresh interval of 60 seconds or more, otherwise use execpi:
+#  ${execp python ~/.config/conky/today.py}
+# These are some appropriate colour definitions to use in the conky.conf:
+#  color4 = 'CC5555',
+#  color3 = 'EEAA55',
+#  color2 = 'EEDD55',
+#  color1 = 'AAAAAA',
+#  color0 = '555555',
+# Also caches the Todoist project names in ~/.config/conky/today.projects.json
+#
+# Anil Gulati
+# 05/01/2018
+
 import urllib.request as request
 import urllib.parse as parse
 import urllib.error as error # Seems that urllib.error.HTTPError is not following documentation.
@@ -55,24 +73,34 @@ try: # Always try the server first to get an up to date list.
         dat = json.loads(res.read().decode()) # Convert json task list to python list of dicts.
     dat.sort(key=lambda t: projects.get(t['project_id'], '')) # Secondary sort on project name.
     dat.sort(key=lambda t: t['priority'], reverse=True) # Stable sort primary key is priority.
-    wrapper = textwrap.TextWrapper(expand_tabs=False, placeholder='') # Reusable instance is more efficient.
-    if not dat:
+    wrapper = textwrap.TextWrapper(expand_tabs=False, placeholder=' ...') # Reusable instance is more efficient.
+    if not dat: # No tasks found.
         color = '${color0}' # Intended to be a greyed out / low contrast colour.
         print(''.join(('${voffset -60}', prefix18, 'NO TASKS'))) # Deliver single line to Conky for display.
     else:
-        for task in dat:
+        for task in dat: # For all tasks found.
             color = str(task['priority']).join(('${color', '}')) # Conky colour directive using priority number e.g. ${color4}.
             project = ' [{0}]'.format(projects.get(task['project_id'], 'unknown')) # ' [Project Name]'.
-            if len(task['content']) <= linelength: # Check if content fits into space allowed on one line.
-                print(''.join((prefix, color, task['content'], project))) # Deliver single line to Conky for display.
-            else: # Otherwise split into at most two lines. Unfortunately TextWrapper only has option to truncate.
-                wrapper.width = linelength # Set to standard width and break into lines.
-                line1 = wrapper.wrap(task['content'])[0] # The 1st line is just wherever the length wraps.
-                line2 = wrapper.wrap(task['content'][::-1])[0][::-1] # The 2nd line is the reversed first wrapped reversed.
-                wrapper.width = int((len(line1) + len(line2)) / 2) + 5 # Make the lines equal length, with room for '...'.
-                line1, line2 = wrapper.wrap(' ... '.join((line1, line2))) # Join and wrap to position '...'.
-                print(''.join((prefix, color, line1, project))) # Display 1st line with project name.
-                print(''.join((prefix, color, line2, ' ' * len(project)))) # 2nd line with blank indent instead of project name.
+            wrapper.max_lines = None # Put line limit back to unrestricted.
+            wrapper.width = linelength # Set to standard width and break to find line 1.
+            lines = wrapper.wrap(task['content']) or ['<no task description>'] # No content wraps to empty list.
+            line1 = lines[0] # Take the first one off the top for output line 1.
+            if len(lines) == 1:
+                print(''.join((prefix, color, line1, project))) # Deliver single line to Conky for display.
+                continue # Next task.
+            elif len(lines) > 2: # Look for last line to display as "First line" " ... " "Last line".
+                lines = ' '.join(lines[1:]) # Rejoin all the other lines for finding the last line.
+                wrapper.max_lines = 1 # Use the line limit to return 1 line, width will still be linelength as last set.
+                lines = wrapper.wrap(lines[::-1]) # Wrap the reverse string to put the last line first.
+                line2 = lines[0][::-1] # Take the first line, which is really the last line, and reverse it back to normal.
+            else: # Otherwise split two lines into two equal length lines.
+                lines = ' '.join(lines) # Put the two lines back together.
+                wrapper.width = len(line1) # Start at the maximum possible necessary line length.
+                while len(wrapper.wrap(lines)) == 2: wrapper.width -= 1 # Look for shortest line length that will wrap to 2 lines.
+                wrapper.width += 1 # Put it back to the shortest line length that worked.
+                line1, line2 = wrapper.wrap(lines)
+            print(''.join((prefix, color, line1, project))) # Display 1st line with project name.
+            print(''.join((prefix, color, line2, ' ' * len(project)))) # 2nd line with blank indent instead of project name.
 except Exception as e: # On error report.
     # TODO: Store task list in cache file and report old information from cache when server not available.
     # TODO: When reporting task list from cache display as color0 to indicate off-line.

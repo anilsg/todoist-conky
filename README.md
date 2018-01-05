@@ -36,13 +36,10 @@ This repo just supplies the files required for placement in ``~/.config/conky``.
 - Tasks are sorted by priority and secondarily sorted by project name.
 - Significant errors are reported, combined with the task list if possible.
 - Projects list is cached. To refresh the projects list delete the cache file.
-- Off-line access is planned retrieving from most recent cache.
-- When off-line, tasks will be listed greyed out to indicate non-live status.
+- Off-line access is planned retrieving from most recent cache (not yet implemented).
+- When off-line, tasks will be listed greyed out to indicate non-live status (not yet implemented).
 - When task content is too long lines are truncated and wrapped into at most 2 lines.
-
-## Bugs
-
-- Long line content can sometimes be repeated under the line wrap algorithm.
+- When two lines are used lines are kept as close as possible to equal length.
 
 ## Screenshot
 
