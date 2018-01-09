@@ -94,8 +94,8 @@ try: # Always try the server first to get an up to date list.
                 lines = wrapper.wrap(lines[::-1]) # Wrap the reverse string to put the last line first.
                 line2 = lines[0][::-1] # Take the first line, which is really the last line, and reverse it back to normal.
             else: # Otherwise split two lines into two equal length lines.
+                wrapper.width = max(len(line) for line in lines) # Start at the maximum possible necessary line length.
                 lines = ' '.join(lines) # Put the two lines back together.
-                wrapper.width = len(line1) # Start at the maximum possible necessary line length.
                 while len(wrapper.wrap(lines)) == 2: wrapper.width -= 1 # Look for shortest line length that will wrap to 2 lines.
                 wrapper.width += 1 # Put it back to the shortest line length that worked.
                 line1, line2 = wrapper.wrap(lines)
