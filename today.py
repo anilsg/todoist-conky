@@ -1,22 +1,24 @@
 #!/bin/env python
 
-# ~/.config/conky/today.py
-# Conky script to return Todoist tasks in the 'today' filter as display lines.
-# Runs in ~/.config/conky/.
-# Requires Todoist auth token in ~/.config/todoist.conf.
-# Requires associated ~/.config/conky/conky.conf to call this script.
-# This line will work but recommend refresh interval of 60 seconds or more, otherwise use execpi:
-#  ${execp python ~/.config/conky/today.py}
-# These are some appropriate colour definitions to use in the conky.conf:
-#  color4 = 'CC5555',
-#  color3 = 'EEAA55',
-#  color2 = 'EEDD55',
-#  color1 = 'AAAAAA',
-#  color0 = '555555',
-# Also caches the Todoist project names in ~/.config/conky/today.projects.json
-#
-# Anil Gulati
-# 05/01/2018
+"""
+~/.config/conky/today.py
+Conky script to return Todoist tasks in the 'today' filter as display lines.
+Runs in ~/.config/conky/.
+Requires Todoist auth token in ~/.config/todoist.conf.
+Requires associated ~/.config/conky/conky.conf to call this script.
+This line will work but recommend refresh interval of 60 seconds or more, otherwise use execpi:
+ ${execp python ~/.config/conky/today.py}
+These are some appropriate colour definitions to use in the conky.conf:
+ color4 = 'CC5555',
+ color3 = 'EEAA55',
+ color2 = 'EEDD55',
+ color1 = 'AAAAAA',
+ color0 = '555555',
+Also caches the Todoist project names in ~/.config/conky/today.projects.json
+
+Anil Gulati
+05/01/2018
+"""
 
 import urllib.request as request
 import urllib.parse as parse
@@ -32,6 +34,11 @@ prefix = '${goto 800}${font Noto Sans Mono:size=12}${alignr}' # Conky prefix req
 prefix4 = '${goto 800}${font Noto Sans Mono:size=12}${alignr}${color4}' # Conky prefix including error colour.
 prefix18 = '${goto 800}${font Noto Sans Mono:size=18}${alignr}${color0}' # Conky prefix including error colour.
 linelength = 50
+
+## You could define the prefixes in the conky.conf as templates and just output ${templateN} here.
+## This would theoretically make some separation of presentation and content between this script and conky.conf.
+## But practically, this script needs to layout based on screen size anyway so it's not really worth it at this point.
+## Hack the script if you want to alter the layout.
 
 try: # File may currently hold 40 character token only.
     with open(expanduser('~/.config/todoist.conf'), 'r') as cache: token = cache.read()
@@ -76,7 +83,8 @@ try: # Always try the server first to get an up to date list.
     wrapper = textwrap.TextWrapper(expand_tabs=False, placeholder=' ...') # Reusable instance is more efficient.
     if not dat: # No tasks found.
         color = '${color0}' # Intended to be a greyed out / low contrast colour.
-        print(''.join(('${voffset -60}', prefix18, 'NO TASKS'))) # Deliver single line to Conky for display.
+        print(''.join((prefix18, 'NO TASKS   '))) # Deliver single line to Conky for display.
+        ##print(''.join(('${voffset -60}', prefix18, 'NO TASKS'))) # Deliver single line to Conky for display.
     else:
         for task in dat: # For all tasks found.
             color = str(task['priority']).join(('${color', '}')) # Conky colour directive using priority number e.g. ${color4}.
